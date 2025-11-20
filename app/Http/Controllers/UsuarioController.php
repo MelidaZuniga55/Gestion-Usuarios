@@ -13,7 +13,12 @@ class UsuarioController extends Controller
     public function index()
     {
         $usuarios = Usuario::all();
-        return response()->json($usuarios);
+        
+        return response()->json([
+            'data' => $usuarios,
+            'message' => 'Usuarios retrieved successfully',
+            'status' => 200
+        ], 200);
     }
 
     /**
@@ -21,33 +26,110 @@ class UsuarioController extends Controller
      */
     public function store(Request $request)
     {
-        $usuario = Usuario::create($request->all());
-        return response()->json($usuario, 201);
+        // Validación de datos
+        $validated = $request->validate([
+            'nombre' => 'required|string|max:255',
+            'apellido' => 'required|string|max:255',
+            'email' => 'required|email|unique:usuarios,email',
+            'telefono' => 'nullable|string|max:20',
+            'fecha_nacimiento' => 'nullable|date',
+            'direccion' => 'nullable|string|max:500',
+            'activo' => 'boolean'
+        ]);
+
+        $usuario = Usuario::create($validated);
+        
+        return response()->json([
+            'data' => $usuario,
+            'message' => 'Usuario created successfully',
+            'status' => 201
+        ], 201);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Usuario $usuario)
+    public function show(string $id)
     {
-        return response()->json($usuario);
+        try {
+            $usuario = Usuario::findOrFail($id);
+            
+            return response()->json([
+                'data' => $usuario,
+                'message' => 'Usuario retrieved successfully',
+                'status' => 200
+            ], 200);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Usuario not found',
+                'error' => $e->getMessage(),
+                'status' => 404
+            ], 404);
+        }
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Usuario $usuario)
+    public function update(Request $request, string $id)
     {
-        $usuario->update($request->all());
-        return response()->json($usuario);
+        try {
+            // Buscamos el usuario por su id
+            $usuario = Usuario::findOrFail($id);
+
+            // Validación de datos
+            $validated = $request->validate([
+                'nombre' => 'sometimes|required|string|max:255',
+                'apellido' => 'sometimes|required|string|max:255',
+                'email' => 'sometimes|required|email|unique:usuarios,email,' . $id,
+                'telefono' => 'nullable|string|max:20',
+                'fecha_nacimiento' => 'nullable|date',
+                'direccion' => 'nullable|string|max:500',
+                'activo' => 'boolean'
+            ]);
+
+            // Actualizamos el usuario
+            $usuario->update($validated);
+
+            return response()->json([
+                'data' => $usuario,
+                'message' => 'Usuario updated successfully',
+                'status' => 200
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error updating usuario',
+                'error' => $e->getMessage(),
+                'status' => 500
+            ], 500);
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Usuario $usuario)
+    public function destroy(string $id)
     {
-        $usuario->delete();
-        return response()->json(null, 204);
+        try {
+            // Buscamos el usuario por su id
+            $usuario = Usuario::findOrFail($id);
+
+            // Eliminamos el usuario
+            $usuario->delete();
+
+            return response()->json([
+                'message' => 'Usuario deleted successfully',
+                'status' => 200
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error deleting usuario',
+                'error' => $e->getMessage(),
+                'status' => 500
+            ], 500);
+        }
     }
 }
