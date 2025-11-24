@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Usuario;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Carbon;
 
 class UsuarioController extends Controller
 {
@@ -127,6 +129,103 @@ class UsuarioController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Error deleting usuario',
+                'error' => $e->getMessage(),
+                'status' => 500
+            ], 500);
+        }
+    }
+
+    
+    public function register(Request $request)
+    {
+        try {
+            // Validación de datos
+            $request->validate([
+                'nombre' => 'required|string|max:255',
+                'apellido' => 'required|string|max:255',
+                'email' => 'required|email|unique:usuarios,email',
+                'telefono' => 'nullable|string|max:20',
+                'fecha_nacimiento' => 'nullable|date',
+                'direccion' => 'nullable|string|max:500',
+                'activo' => 'boolean'
+                //'password' => 'required|string|min:8'
+            ]);
+
+            $usuario = Usuario::create([
+                'nombre' => $request->nombre,
+                'apellido' => $request->apellido,
+                'email' => $request->email,
+                'telefono' => $request->telefono,
+                'fecha_nacimiento' => $request->fecha_nacimiento,
+                'direccion' => $request->direccion,
+                'activo' => $request->activo
+                //'password' => Hash::make($request->password)
+            ]);
+
+            return response()->json([
+                'message' => 'Usuario Registered successfully',
+                'data' => $usuario,
+                'status' => 201
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error registering usuario',
+                'error' => $e->getMessage(),
+                'status' => 500
+            ], 500);
+        }
+    }
+
+    public function login(Request $request)
+    {
+        try {
+            // Este es un ejemplo básico de login sin autenticación real
+            $request->validate([
+                'email' => 'required|email',
+                //'password' => 'required|string'
+            ]);
+
+            $credentials = $request->only('email'/*, 'password'*/);
+            if (Auth::attempt($credentials)) {
+                $user = $request->user();
+
+                $expirationTimeToken = Carbon::now()->addMinutes(10);
+
+                $token = $user->createToken('auth_token', ['server:update'], $expirationTimeToken)->plainTextToken;
+
+                return response()->json([
+                    'message' => 'Login successful',
+                    'user' => $user,
+                    'token' => $token,
+                    'status' => 200
+                ], 200);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error during login',
+                'error' => $e->getMessage(),
+                'status' => 500
+            ], 500);
+        }
+    }
+
+    public function logout(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            $user->currentAccessToken()->delete();
+
+            return response()->json([
+                'message' => 'User Log out successful',
+                'status' => 200
+            ], 200);
+
+        } catch (\Exception $e) {
+            
+            return response()->json([
+                'message' => 'Error during logout',
                 'error' => $e->getMessage(),
                 'status' => 500
             ], 500);
