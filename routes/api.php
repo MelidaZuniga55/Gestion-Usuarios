@@ -10,3 +10,7 @@ Route::get('/user', function (Request $request) {
 
 // CRUD de Usuarios
 Route::apiResource('usuarios', UsuarioController::class);
+
+Route::post('/register', [UsuarioController::class, 'register']);
+Route::post('/login', [UsuarioController::class, 'login']);
+Route::post('/logout', [UsuarioController::class, 'logout'])->middleware('auth:sanctum');

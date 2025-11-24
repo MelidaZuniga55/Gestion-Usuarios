@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Models\Usuario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Hash;
 
 class UsuarioController extends Controller
 {
@@ -14,8 +16,8 @@ class UsuarioController extends Controller
      */
     public function index()
     {
-        $usuarios = Usuario::all();
-        
+        $usuarios = User::all();
+
         return response()->json([
             'data' => $usuarios,
             'message' => 'Usuarios retrieved successfully',
@@ -30,17 +32,17 @@ class UsuarioController extends Controller
     {
         // Validación de datos
         $validated = $request->validate([
-            'nombre' => 'required|string|max:255',
-            'apellido' => 'required|string|max:255',
-            'email' => 'required|email|unique:usuarios,email',
+            'name' => 'required|string|max:255',
+            'lastName' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
             'telefono' => 'nullable|string|max:20',
             'fecha_nacimiento' => 'nullable|date',
             'direccion' => 'nullable|string|max:500',
-            'activo' => 'boolean'
+            //'activo' => 'boolean'
         ]);
 
-        $usuario = Usuario::create($validated);
-        
+        $usuario = User::create($validated);
+
         return response()->json([
             'data' => $usuario,
             'message' => 'Usuario created successfully',
@@ -54,14 +56,14 @@ class UsuarioController extends Controller
     public function show(string $id)
     {
         try {
-            $usuario = Usuario::findOrFail($id);
-            
+            $usuario = User::findOrFail($id);
+
             return response()->json([
                 'data' => $usuario,
                 'message' => 'Usuario retrieved successfully',
                 'status' => 200
             ], 200);
-            
+
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Usuario not found',
@@ -78,13 +80,13 @@ class UsuarioController extends Controller
     {
         try {
             // Buscamos el usuario por su id
-            $usuario = Usuario::findOrFail($id);
+            $usuario = User::findOrFail($id);
 
             // Validación de datos
             $validated = $request->validate([
-                'nombre' => 'sometimes|required|string|max:255',
-                'apellido' => 'sometimes|required|string|max:255',
-                'email' => 'sometimes|required|email|unique:usuarios,email,' . $id,
+                'name' => 'sometimes|required|string|max:255',
+                'lastName' => 'sometimes|required|string|max:255',
+                'email' => 'sometimes|required|email|unique:users,email,' . $id,
                 'telefono' => 'nullable|string|max:20',
                 'fecha_nacimiento' => 'nullable|date',
                 'direccion' => 'nullable|string|max:500',
@@ -116,7 +118,7 @@ class UsuarioController extends Controller
     {
         try {
             // Buscamos el usuario por su id
-            $usuario = Usuario::findOrFail($id);
+            $usuario = User::findOrFail($id);
 
             // Eliminamos el usuario
             $usuario->delete();
@@ -135,32 +137,32 @@ class UsuarioController extends Controller
         }
     }
 
-    
+
     public function register(Request $request)
     {
         try {
             // Validación de datos
             $request->validate([
-                'nombre' => 'required|string|max:255',
-                'apellido' => 'required|string|max:255',
-                'email' => 'required|email|unique:usuarios,email',
+                'name' => 'required|string|max:255',
+                'lastName' => 'required|string|max:255',
+                'email' => 'required|email|unique:users,email',
                 'telefono' => 'nullable|string|max:20',
                 'fecha_nacimiento' => 'nullable|date',
                 'direccion' => 'nullable|string|max:500',
-                'activo' => 'boolean'
-                //'password' => 'required|string|min:8'
+                //'activo' => 'boolean',
+                'password' => 'required|string|min:8'
             ]);
 
-            $usuario = Usuario::create([
-                'nombre' => $request->nombre,
-                'apellido' => $request->apellido,
+            $usuario = User::create([
+                'name' => $request->name,
+                'lastName' => $request->lastName,
                 'email' => $request->email,
                 'telefono' => $request->telefono,
                 'fecha_nacimiento' => $request->fecha_nacimiento,
                 'direccion' => $request->direccion,
-                'activo' => $request->activo
-                //'password' => Hash::make($request->password)
+                'password' => Hash::make($request->password)
             ]);
+
 
             return response()->json([
                 'message' => 'Usuario Registered successfully',
@@ -183,10 +185,10 @@ class UsuarioController extends Controller
             // Este es un ejemplo básico de login sin autenticación real
             $request->validate([
                 'email' => 'required|email',
-                //'password' => 'required|string'
+                'password' => 'required|string'
             ]);
 
-            $credentials = $request->only('email'/*, 'password'*/);
+            $credentials = $request->only('email', 'password');
             if (Auth::attempt($credentials)) {
                 $user = $request->user();
 
@@ -223,7 +225,7 @@ class UsuarioController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
-            
+
             return response()->json([
                 'message' => 'Error during logout',
                 'error' => $e->getMessage(),
