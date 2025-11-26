@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Usuario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class UsuarioController extends Controller
 {
@@ -33,10 +36,14 @@ class UsuarioController extends Controller
             'apellido' => 'required|string|max:255',
             'email' => 'required|email|unique:usuarios,email',
             'telefono' => 'nullable|string|max:20',
+            'password' => 'required|string|min:8',
             'fecha_nacimiento' => 'nullable|date',
             'direccion' => 'nullable|string|max:500',
             'activo' => 'boolean'
         ]);
+
+        // Hasheamos la contraseña antes de guardar
+        $validated['password'] = Hash::make($validated['password']);
 
         $usuario = Usuario::create($validated);
 
@@ -85,10 +92,17 @@ class UsuarioController extends Controller
                 'apellido' => 'sometimes|required|string|max:255',
                 'email' => 'sometimes|required|email|unique:usuarios,email,' . $id,
                 'telefono' => 'nullable|string|max:20',
+                'password' => 'nullable|string|min:8',
                 'fecha_nacimiento' => 'nullable|date',
                 'direccion' => 'nullable|string|max:500',
-                'activo' => 'boolean'
+                'activo' => 'sometimes|boolean'
+
             ]);
+
+            if (isset($validated['password'])) {
+                // Hasheamos la nueva contraseña si se proporciona
+                $validated['password'] = Hash::make($validated['password']);
+            }
 
             // Actualizamos el usuario
             $usuario->update($validated);
@@ -281,4 +295,122 @@ class UsuarioController extends Controller
             ], 500);
         }
     }
+
+    public function register(Request $request)
+    {
+        try {
+            // Validar los datos enviados para crear un usuario nuevo
+            $request->validate([
+                'nombre' => 'required|string|max:255',
+                'apellido' => 'required|string|max:255',
+                'email' => 'required|email|unique:usuarios,email',
+                'telefono' => 'nullable|string|max:20',
+                'fecha_nacimiento' => 'nullable|date',
+                'direccion' => 'nullable|string|max:500',
+                'password' => 'required|string|min:8'
+            ]);
+
+            // Crear el usuario en la tabla Usuario
+            $usuario = Usuario::create([
+                'nombre' => $request->nombre,
+                'apellido' => $request->apellido,
+                'email' => $request->email,
+                'telefono' => $request->telefono,
+                'fecha_nacimiento' => $request->fecha_nacimiento,
+                'direccion' => $request->direccion,
+                'password' => Hash::make($request->password),
+            ]);
+
+            // Respuesta en caso de registro exitoso
+            return response()->json([
+                'message' => 'Usuario Registered successfully',
+                'data' => $usuario,
+                'status' => 201
+            ], 201);
+
+        } catch (\Exception $e) {
+            // Manejo de errores durante el registro
+            return response()->json([
+                'message' => 'Error registering usuario',
+                'error' => $e->getMessage(),
+                'status' => 500
+            ], 500);
+        }
+    }
+
+    public function login(Request $request)
+    {
+        try {
+            // Validar credenciales para iniciar sesión
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required|string'
+            ]);
+
+            // Obtener credenciales del request
+            $credentials = $request->only('email', 'password');
+
+            // Intento de autenticación con Auth::attempt
+            if (Auth::attempt($credentials)) {
+
+                // Obtener el usuario autenticado
+                $user = $request->user();
+
+                // Definir tiempo de expiración del token
+                $expirationTimeToken = Carbon::now()->addMinutes(10);
+
+                // Generar token de Sanctum con permisos
+                $token = $user->createToken('auth_token', ['server:update'], $expirationTimeToken)->plainTextToken;
+
+                // Respuesta con token
+                return response()->json([
+                    'message' => 'Login successful',
+                    'user' => $user,
+                    'token' => $token,
+                    'status' => 200
+                ], 200);
+            }
+
+            // Si las credenciales no son correctas
+            return response()->json([
+                'message' => 'Invalid credentials',
+                'status' => 401
+            ], 401);
+
+        } catch (\Exception $e) {
+            // Error en el proceso de login
+            return response()->json([
+                'message' => 'Error during login',
+                'error' => $e->getMessage(),
+                'status' => 500
+            ], 500);
+        }
+    }
+
+    public function logout(Request $request)
+    {
+        try {
+            // Obtener el usuario autenticado mediante el token
+            $user = $request->user();
+
+            // Eliminar únicamente el token actual
+            $user->currentAccessToken()->delete();
+
+            // Respuesta de cierre de sesión
+            return response()->json([
+                'message' => 'User Log out successful',
+                'status' => 200
+            ], 200);
+
+        } catch (\Exception $e) {
+
+            // Error en el proceso de logout
+            return response()->json([
+                'message' => 'Error during logout',
+                'error' => $e->getMessage(),
+                'status' => 500
+            ], 500);
+        }
+    }
+
 }
