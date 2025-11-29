@@ -21,6 +21,38 @@ Laravel is a web application framework with expressive, elegant syntax. We belie
 
 Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
+## 📋 Endpoints Disponibles
+
+### 🔑 Autenticación
+- `POST /api/auth/register` - Registro de usuarios
+- `POST /api/auth/login` - Inicio de sesión
+- `POST /api/auth/logout` - Cerrar sesión (protegido)
+- `POST /api/auth/refresh` - Refrescar token (protegido)
+- `GET /api/auth/check` - Verificar estado del token (protegido)
+- `GET /api/auth/me` - Obtener usuario actual (protegido)
+
+### 📊 Estadísticas
+- `GET /api/estadisticas` - Estadísticas generales
+- `GET /api/estadisticas/diarias` - Registros por día (últimos 30 días)
+- `GET /api/estadisticas/semanales` - Registros por semana (últimas 12 semanas)
+- `GET /api/estadisticas/mensuales` - Registros por mes (últimos 12 meses)
+
+### 👥 Gestión de Usuarios (CRUD - Protegido)
+- `GET /api/usuarios` - Listar todos los usuarios
+- `POST /api/usuarios` - Crear nuevo usuario
+- `GET /api/usuarios/{id}` - Obtener usuario específico
+- `PUT /api/usuarios/{id}` - Actualizar usuario completo
+- `PATCH /api/usuarios/{id}` - Actualizar usuario parcial
+- `DELETE /api/usuarios/{id}` - Eliminar usuario
+
+> **Nota:** Los endpoints marcados como "protegido" requieren autenticación mediante token Bearer.
+> **Documentación completa:** Ver [API_ENDPOINTS.md](API_ENDPOINTS.md) para detalles de cada endpoint.
+
+## ⏱️ Configuración de Tokens
+- **Tiempo de expiración:** 5 minutos (300 segundos)
+- **Tipo:** Bearer Token (Laravel Sanctum)
+- **Renovación:** Automática mediante `/api/auth/refresh`
+
 ## Learning Laravel
 
 Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
