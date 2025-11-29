@@ -302,7 +302,7 @@ class UsuarioController extends Controller
             if (Auth::attempt($credentials)) {
 
                 $user = $request->user();
-                $expirationTimeToken = Carbon::now()->addMinutes(5);
+                $expirationTimeToken = Carbon::now()->addMinutes(7);
 
                 $token = $user->createToken(
                     'auth_token',
