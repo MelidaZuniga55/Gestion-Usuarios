@@ -4,30 +4,47 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UsuarioController;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+/* ============================================
+ * AUTENTICACIÓN - RUTAS PÚBLICAS
+ * ============================================ */
+Route::prefix('auth')->group(function () {
+    Route::post('/register', [UsuarioController::class, 'store']);
+    Route::post('/login', [UsuarioController::class, 'login']);
+});
 
- /* ESTADÍSTICAS*/
-Route::prefix('usuarios/estadisticas')->group(function () {
+/* ============================================
+ * AUTENTICACIÓN - RUTAS PROTEGIDAS
+ * ============================================ */
+Route::prefix('auth')->middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [UsuarioController::class, 'logout']);
+    Route::post('/refresh', [UsuarioController::class, 'refreshToken']);
+    Route::get('/check', [UsuarioController::class, 'checkToken']);
+    Route::get('/me', function (Request $request) {
+        return response()->json([
+            'user' => $request->user(),
+            'status' => 200
+        ]);
+    });
+});
+
+/* ============================================
+ * ESTADÍSTICAS - RUTAS PÚBLICAS
+ * ============================================ */
+Route::prefix('estadisticas')->group(function () {
     Route::get('/', [UsuarioController::class, 'getStatistics']);
     Route::get('/diarias', [UsuarioController::class, 'getDailyStatistics']);
     Route::get('/semanales', [UsuarioController::class, 'getWeeklyStatistics']);
     Route::get('/mensuales', [UsuarioController::class, 'getMonthlyStatistics']);
 });
 
- /* AUTH*/
-Route::post('/register', [UsuarioController::class, 'register']);
-Route::post('/login', [UsuarioController::class, 'login']);
-Route::post('/logout', [UsuarioController::class, 'logout'])->middleware('auth:sanctum');
-Route::post('/refresh', [UsuarioController::class, 'refreshToken'])->middleware('auth:sanctum');
-
- /* CRUD PROTEGIDO*/
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/usuarios', [UsuarioController::class, 'index']);
-    Route::post('/usuarios', [UsuarioController::class, 'store']);
-    Route::get('/usuarios/{id}', [UsuarioController::class, 'show']);
-    Route::put('/usuarios/{id}', [UsuarioController::class, 'update']);
-    Route::patch('/usuarios/{id}', [UsuarioController::class, 'update']);
-    Route::delete('/usuarios/{id}', [UsuarioController::class, 'destroy']);
+/* ============================================
+ * USUARIOS - CRUD PROTEGIDO
+ * ============================================ */
+Route::prefix('usuarios')->middleware('auth:sanctum')->group(function () {
+    Route::get('/', [UsuarioController::class, 'index']);
+    Route::post('/', [UsuarioController::class, 'store']);
+    Route::get('/{id}', [UsuarioController::class, 'show']);
+    Route::put('/{id}', [UsuarioController::class, 'update']);
+    Route::patch('/{id}', [UsuarioController::class, 'update']);
+    Route::delete('/{id}', [UsuarioController::class, 'destroy']);
 });

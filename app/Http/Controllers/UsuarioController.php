@@ -11,7 +11,7 @@ use Carbon\Carbon;
 
 class UsuarioController extends Controller
 {
-     // LISTAR USUARIOS
+    // LISTAR USUARIOS
     public function index()
     {
         $usuarios = Usuario::all();
@@ -23,7 +23,7 @@ class UsuarioController extends Controller
         ]);
     }
 
-     // CREAR USUARIO
+    // CREAR USUARIO
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -48,7 +48,7 @@ class UsuarioController extends Controller
         ], 201);
     }
 
-     //  MOSTRAR USUARIO
+    //  MOSTRAR USUARIO
     public function show(string $id)
     {
         try {
@@ -67,7 +67,7 @@ class UsuarioController extends Controller
         }
     }
 
-     // ACTUALIZAR USUARIO
+    // ACTUALIZAR USUARIO
     public function update(Request $request, string $id)
     {
         try {
@@ -105,7 +105,7 @@ class UsuarioController extends Controller
         }
     }
 
-      // ELIMINAR USUARIO
+    // ELIMINAR USUARIO
     public function destroy(string $id)
     {
         try {
@@ -125,7 +125,7 @@ class UsuarioController extends Controller
         }
     }
 
-     // ESTADÍSTICAS GENERALES
+    // ESTADÍSTICAS GENERALES
     public function getStatistics()
     {
         try {
@@ -162,7 +162,7 @@ class UsuarioController extends Controller
         }
     }
 
-     // ESTADÍSTICAS DIARIAS
+    // ESTADÍSTICAS DIARIAS
     public function getDailyStatistics()
     {
         try {
@@ -189,7 +189,7 @@ class UsuarioController extends Controller
         }
     }
 
-     // ESTADÍSTICAS SEMANALES
+    // ESTADÍSTICAS SEMANALES
     public function getWeeklyStatistics()
     {
         try {
@@ -220,7 +220,7 @@ class UsuarioController extends Controller
         }
     }
 
-     // ESTADÍSTICAS MENSUALES
+    // ESTADÍSTICAS MENSUALES
     public function getMonthlyStatistics()
     {
         try {
@@ -250,45 +250,45 @@ class UsuarioController extends Controller
         }
     }
 
-      //REGISTRO DE USUARIO
-    public function register(Request $request)
-    {
-        try {
-            $request->validate([
-                'nombre' => 'required|string|max:255',
-                'apellido' => 'required|string|max:255',
-                'email' => 'required|email|unique:usuarios,email',
-                'telefono' => 'nullable|string|max:20',
-                'fecha_nacimiento' => 'nullable|date',
-                'direccion' => 'nullable|string|max:500',
-                'password' => 'required|string|min:8'
-            ]);
+    //REGISTRO DE USUARIO
+    // public function register(Request $request)
+    // {
+    //     try {
+    //         $request->validate([
+    //             'nombre' => 'required|string|max:255',
+    //             'apellido' => 'required|string|max:255',
+    //             'email' => 'required|email|unique:usuarios,email',
+    //             'telefono' => 'nullable|string|max:20',
+    //             'fecha_nacimiento' => 'nullable|date',
+    //             'direccion' => 'nullable|string|max:500',
+    //             'password' => 'required|string|min:8'
+    //         ]);
 
-            $usuario = Usuario::create([
-                'nombre' => $request->nombre,
-                'apellido' => $request->apellido,
-                'email' => $request->email,
-                'telefono' => $request->telefono,
-                'fecha_nacimiento' => $request->fecha_nacimiento,
-                'direccion' => $request->direccion,
-                'password' => Hash::make($request->password),
-            ]);
+    //         $usuario = Usuario::create([
+    //             'nombre' => $request->nombre,
+    //             'apellido' => $request->apellido,
+    //             'email' => $request->email,
+    //             'telefono' => $request->telefono,
+    //             'fecha_nacimiento' => $request->fecha_nacimiento,
+    //             'direccion' => $request->direccion,
+    //             'password' => Hash::make($request->password),
+    //         ]);
 
-            return response()->json([
-                'message' => 'Usuario registered successfully',
-                'data' => $usuario,
-                'status' => 201
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Error registering usuario',
-                'status' => 500
-            ], 500);
-        }
-    }
+    //         return response()->json([
+    //             'message' => 'Usuario registered successfully',
+    //             'data' => $usuario,
+    //             'status' => 201
+    //         ], 201);
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'message' => 'Error registering usuario',
+    //             'status' => 500
+    //         ], 500);
+    //     }
+    // }
 
- 
-     /* LOGIN */
+
+    /* LOGIN */
     public function login(Request $request)
     {
         try {
@@ -302,7 +302,7 @@ class UsuarioController extends Controller
             if (Auth::attempt($credentials)) {
 
                 $user = $request->user();
-                $expirationTimeToken = Carbon::now()->addMinutes(10);
+                $expirationTimeToken = Carbon::now()->addMinutes(5);
 
                 $token = $user->createToken(
                     'auth_token',
@@ -314,6 +314,8 @@ class UsuarioController extends Controller
                     'message' => 'Login successful',
                     'user' => $user,
                     'token' => $token,
+                    'expires_at' => $expirationTimeToken->toIso8601String(),
+                    'expires_in' => 300, // 5 minutos en segundos
                     'status' => 200
                 ]);
             }
@@ -342,16 +344,20 @@ class UsuarioController extends Controller
             // Eliminar token actual
             $user->currentAccessToken()->delete();
 
-            // Crear nuevo token
+            // Crear nuevo token con expiración de 5 minutos
+            $expirationTimeToken = Carbon::now()->addMinutes(5);
+
             $newToken = $user->createToken(
                 'auth_token',
                 ['server:update'],
-                Carbon::now()->addMinutes(10)
+                $expirationTimeToken
             )->plainTextToken;
 
             return response()->json([
                 'message' => 'Token refreshed successfully',
                 'token' => $newToken,
+                'expires_at' => $expirationTimeToken->toIso8601String(),
+                'expires_in' => 300, // 5 minutos en segundos
                 'status' => 200
             ]);
         } catch (\Exception $e) {
@@ -359,6 +365,38 @@ class UsuarioController extends Controller
                 'message' => 'Error refreshing token',
                 'status' => 500
             ], 500);
+        }
+    }
+
+    /* ------------------------------------------
+     * CHECK TOKEN
+     * ------------------------------------------ */
+    public function checkToken(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $token = $user->currentAccessToken();
+
+            $expiresAt = $token->expires_at;
+            $now = Carbon::now();
+
+            // Calcular segundos restantes hasta la expiración
+            $expiresIn = $expiresAt ? $expiresAt->diffInSeconds($now, false) : null;
+
+            return response()->json([
+                'message' => 'Token is valid',
+                'valid' => true,
+                'expires_at' => $expiresAt ? $expiresAt->toIso8601String() : null,
+                'expires_in' => $expiresIn ? abs($expiresIn) : null,
+                'user' => $user,
+                'status' => 200
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Invalid token',
+                'valid' => false,
+                'status' => 401
+            ], 401);
         }
     }
 
