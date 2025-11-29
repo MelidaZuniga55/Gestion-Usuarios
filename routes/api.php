@@ -8,7 +8,7 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-// Estadísticas de usuarios (debe ir antes del apiResource)
+ /* ESTADÍSTICAS*/
 Route::prefix('usuarios/estadisticas')->group(function () {
     Route::get('/', [UsuarioController::class, 'getStatistics']);
     Route::get('/diarias', [UsuarioController::class, 'getDailyStatistics']);
@@ -16,16 +16,13 @@ Route::prefix('usuarios/estadisticas')->group(function () {
     Route::get('/mensuales', [UsuarioController::class, 'getMonthlyStatistics']);
 });
 
-// registro de usuario
+ /* AUTH*/
 Route::post('/register', [UsuarioController::class, 'register']);
-// Login de usuario
 Route::post('/login', [UsuarioController::class, 'login']);
-// Logout de usuario
 Route::post('/logout', [UsuarioController::class, 'logout'])->middleware('auth:sanctum');
+Route::post('/refresh', [UsuarioController::class, 'refreshToken'])->middleware('auth:sanctum');
 
-// crud de usuarios
-
-// CRUD de Usuarios (rutas explícitas)
+ /* CRUD PROTEGIDO*/
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/usuarios', [UsuarioController::class, 'index']);
     Route::post('/usuarios', [UsuarioController::class, 'store']);
